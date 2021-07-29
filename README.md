@@ -16,6 +16,7 @@ Blocks that are sent to this function need to follow a specific structure in ord
 
 ```json
 {
+  "command": "grade",
   "block": {
     "response": "<response input by user on the web app>",
     "responseID": "<id used to locate the correct answer in Sets DB>",
@@ -48,3 +49,12 @@ If an error occurs at any point in the grading process, it will be aborted, and 
   }
 }
 ```
+
+## Output format
+
+The function will directly output whatever the selected grading function's output was
+
+## Future improvements:
+
+- The grading and algorithm functions are all lambda functions. Instead of issuing requests to them via their API Gateways, we could just invoke them directly (using the boto3.client('lambda') client). This might reduce latency
+  - [Calling lambda functions from lambda functions](https://www.sqlshack.com/calling-an-aws-lambda-function-from-another-lambda-function/)
