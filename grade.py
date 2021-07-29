@@ -185,7 +185,7 @@ def get_correct_answer(block, headers):
             }
         }
 
-    response_id = block.get("response_id", None)
+    response_id = block.get("responseID", None)
 
     if not response_id:
         return {
@@ -196,7 +196,7 @@ def get_correct_answer(block, headers):
         }
 
     # We can now fetch the answer from the sets DB
-    payload = {"response_id": response_id}
+    payload = {"responseID": response_id}
 
     answer = safe_get(
         level,
@@ -217,7 +217,7 @@ def get_grade(block):
         "command": "grade",
         "response": block["response"],
         "answer": block["answer"],
-        "params": block.get("params", None),
+        "params": block.get("gradingParams", None),
     }
 
     # Endpoint for the specified grading function

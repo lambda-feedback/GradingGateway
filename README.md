@@ -10,24 +10,41 @@ Containerised lambda function which handles all grading requests directly from t
 
 Furthermore, the idea is that the function catches any data formatting and auth issues as early as possible. ie before sending the block out to each of the resources, which would waste time.
 
-## Block Schema
+## Input Format
 
 Blocks that are sent to this function need to follow a specific structure in order to be dealt with effectively:
 
 ```json
 {
   "block": {
-    "response": <response input by user on the web app>,
-    ""
-    "gradingFunction": <grading function name>,
+    "response": "<response input by user on the web app>",
+    "responseID": "<id used to locate the correct answer in Sets DB>",
+    "gradingFunction": "<grading function name>",
+    "gradingParams": {
+      "<optional grading function params>"
+    },
     "algorithmPipeline": [
       {
-        "algorithmFunction": <algorithm function name>,
-        "props": <optional function props>
+        "algorithmFunction": "<algorithm function name>",
+        "params": {
+          "<optional function params>"
+        }
       },
-      ...
+      "..."
     ]
   }
 }
+```
 
+## Error output shape
+
+If an error occurs at any point in the grading process, it will be aborted, and the error returned in the form:
+
+```json
+{
+  "error": {
+    "level": "<stage at which the error occurred>",
+    "description": "<error description>"
+  }
+}
 ```
