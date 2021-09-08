@@ -17,7 +17,10 @@ def safe_get(level, url, json=None, headers=None, **kwargs):
         return {
             "error": {
                 "level": level + " get",
-                "description": "An Http Error occurred: " + repr(errh),
+                "description": "A Http Error occurred: " + repr(errh),
+                "req_json": json
+                if os.getenv("ENV_MODE") == "dev"
+                else "ENV_MODE != dev",
             }
         }
     except rq.exceptions.ConnectionError as errc:
@@ -25,6 +28,9 @@ def safe_get(level, url, json=None, headers=None, **kwargs):
             "error": {
                 "level": level + " get",
                 "description": "An Error Connecting to the API occurred: " + repr(errc),
+                "req_json": json
+                if os.getenv("ENV_MODE") == "dev"
+                else "ENV_MODE != dev",
             }
         }
     except rq.exceptions.Timeout as errt:
@@ -32,6 +38,9 @@ def safe_get(level, url, json=None, headers=None, **kwargs):
             "error": {
                 "level": level + " get",
                 "description": "A Timeout Error occurred: " + repr(errt),
+                "req_json": json
+                if os.getenv("ENV_MODE") == "dev"
+                else "ENV_MODE != dev",
             }
         }
     except rq.exceptions.RequestException as err:
@@ -39,6 +48,9 @@ def safe_get(level, url, json=None, headers=None, **kwargs):
             "error": {
                 "level": level + " get",
                 "description": "An Unknown Error occurred: " + repr(err),
+                "req_json": json
+                if os.getenv("ENV_MODE") == "dev"
+                else "ENV_MODE != dev",
             }
         }
 
