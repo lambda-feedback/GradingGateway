@@ -88,7 +88,7 @@ def grade(event):
     # algorithm functions might have provided it already (for dynamic questions)
     if "answer" not in block:
         # Send original event headers too, as we need the Auth Token
-        answer = get_correct_answer(block["response_id"], event["headers"])
+        answer = get_correct_answer(block, event["headers"])
 
         # Elevate any errors encountered back to the client
         # (Most likely a permission error hopefully)
@@ -214,7 +214,6 @@ def get_grade(block):
 
     # Craft the payload to the grading function
     payload = {
-        "command": "grade",
         "response": block["response"],
         "answer": block["answer"],
         "params": block.get("gradingParams", None),
@@ -226,7 +225,10 @@ def get_grade(block):
     # Carry out the request, handeling the appropriate errors correctly
     level = f"Grading Gateway: Grading Function: {block['gradeFunction']}"  # for errors
     grade = safe_get(
-        level, url, json=payload, headers={"Content-Type": "application/json"}
+        level,
+        url,
+        json=payload,
+        headers={"Content-Type": "application/json", "command": "grade"},
     )
 
     return grade
