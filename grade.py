@@ -244,7 +244,7 @@ def get_grade(block):
     payload = {
         "response": block.get("response"),
         "answer": block.get("answer"),
-        "params": block.get("gradeParams", None),
+        "params": block.get("gradeParams", {}),
     }
 
     # Carry out the request, handeling the appropriate errors correctly
