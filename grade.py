@@ -100,6 +100,10 @@ def grade(event):
     # Finally, we can grade the block!
     grade = get_grade(block)
 
+    # Return any errors
+    if "error" in grade:
+        grade["error"]["level"] = f"Grading Function: {block.get('gradeFunction')}"
+
     return grade
 
 
@@ -185,7 +189,7 @@ def get_correct_answer(block, headers):
             }
         }
 
-    response_id = block.get("responseID", None)
+    response_id = block.get("response_id", None)
 
     if not response_id:
         return {
@@ -200,7 +204,7 @@ def get_correct_answer(block, headers):
 
     answer = safe_get(
         level,
-        os.getenv["SETS_DB_API_ANSWER_ENDPOINT"],
+        os.getenv("SETS_DB_API_ANSWER_ENDPOINT"),
         json={"response_id": response_id},
         headers={"Authorization": auth},
     )
@@ -212,15 +216,24 @@ def get_grade(block):
     """Send the supplied block to its appropriate grading function
     returns a grade/feedback block, ready to be sent to the SPA"""
 
-    # Craft the payload to the grading function
-    payload = {
-        "response": block["response"],
-        "answer": block["answer"],
-        "params": block.get("gradingParams", None),
-    }
+    # The gradeFunction needs to be specified
+    if not block.get("gradeFunction"):
+        return {
+            "error": {
+                "level": "Grading Gateway: Get Grade",
+                "description": "`gradeFunction` is a required field, it was either lost in the pipeline or never supplied",
+            }
+        }
 
     # Endpoint for the specified grading function
     url = os.getenv("GRADING_FUNCTION_BASE_URL") + block["gradeFunction"]
+
+    # Craft the payload to the grading function
+    payload = {
+        "response": block.get("response"),
+        "answer": block.get("answer"),
+        "params": block.get("gradeParams", None),
+    }
 
     # Carry out the request, handeling the appropriate errors correctly
     level = f"Grading Gateway: Grading Function: {block['gradeFunction']}"  # for errors
