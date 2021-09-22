@@ -24,6 +24,12 @@ Blocks that are sent to this function need to follow a specific structure in ord
     "gradingParams": {
       "<optional grading function params>"
     },
+    // dict of other responses submitted by the user on the same page, collected before grading
+    // pipeline stages use these when modifying the grade block
+    "requirements": { 
+      "previous_response": "<response object>",
+      "..."
+    },
     "algorithmPipeline": [
       {
         "algorithmFunction": "<algorithm function name>",

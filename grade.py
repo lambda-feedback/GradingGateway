@@ -212,8 +212,6 @@ def get_correct_answer(block, headers):
         }
 
     # We can now fetch the answer from the sets DB
-    payload = {"responseID": response_id}
-
     answer = safe_get(
         level,
         os.getenv("SETS_DB_API_ANSWER_ENDPOINT"),
