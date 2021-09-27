@@ -16,41 +16,53 @@ def safe_get(level, url, json=None, headers=None, **kwargs):
     except rq.exceptions.HTTPError as errh:
         return {
             "error": {
-                "level": level + " get",
-                "description": "A Http Error occurred: " + repr(errh),
-                "req_json": json
-                if os.getenv("ENV_MODE") == "dev"
-                else "ENV_MODE != dev",
+                "level":
+                level + " get",
+                "description":
+                f"A Http Error occurred at {level}",
+                "raw":
+                repr(errh),
+                "req_json":
+                json if os.getenv("ENV_MODE") == "dev" else "ENV_MODE != dev",
             }
         }
     except rq.exceptions.ConnectionError as errc:
         return {
             "error": {
-                "level": level + " get",
-                "description": "An Error Connecting to the API occurred: " + repr(errc),
-                "req_json": json
-                if os.getenv("ENV_MODE") == "dev"
-                else "ENV_MODE != dev",
+                "level":
+                level + " get",
+                "description":
+                f"An Error Connecting to the API occurred at {level}",
+                "raw":
+                repr(errc),
+                "req_json":
+                json if os.getenv("ENV_MODE") == "dev" else "ENV_MODE != dev",
             }
         }
     except rq.exceptions.Timeout as errt:
         return {
             "error": {
-                "level": level + " get",
-                "description": "A Timeout Error occurred: " + repr(errt),
-                "req_json": json
-                if os.getenv("ENV_MODE") == "dev"
-                else "ENV_MODE != dev",
+                "level":
+                level + " get",
+                "description":
+                f"A Timeout Error occurred at {level}",
+                "raw":
+                repr(errt),
+                "req_json":
+                json if os.getenv("ENV_MODE") == "dev" else "ENV_MODE != dev",
             }
         }
     except rq.exceptions.RequestException as err:
         return {
             "error": {
-                "level": level + " get",
-                "description": "An Unknown Error occurred: " + repr(err),
-                "req_json": json
-                if os.getenv("ENV_MODE") == "dev"
-                else "ENV_MODE != dev",
+                "level":
+                level + " get",
+                "description":
+                f"An Unknown Error occurred at {level}",
+                "raw":
+                repr(err),
+                "req_json":
+                json if os.getenv("ENV_MODE") == "dev" else "ENV_MODE != dev",
             }
         }
 
@@ -60,9 +72,11 @@ def safe_get(level, url, json=None, headers=None, **kwargs):
     except json.decoder.JSONDecodeError as errj:
         return {
             "error": {
-                "level": level,
-                "description": "An Error occured when parsing JSON from response"
-                + repr(errj),
+                "level":
+                level,
+                "description":
+                "An Error occured when parsing JSON from response" +
+                repr(errj),
             }
         }
 
@@ -101,11 +115,11 @@ def grade(event):
     if "answer" not in block:
         # Send original event headers too, as we need the Auth Token
         answer = get_correct_answer(block, event["headers"])
-
         # Elevate any errors encountered back to the client
         # (Most likely a permission error hopefully)
-        if "error" in answer:
-            return answer
+        if type(answer) == dict:
+            if "error" in answer:
+                return answer
 
         block["answer"] = answer
 
@@ -114,7 +128,8 @@ def grade(event):
 
     # Return any errors
     if "error" in grade:
-        grade["error"]["level"] = f"Grading Function: {block.get('gradeFunction')}"
+        grade["error"][
+            "level"] = f"Grading Function: {block.get('gradeFunction')}"
 
     return grade
 
@@ -132,14 +147,16 @@ def apply_algorithm_pipeline(block):
         }
 
         # Endpoint for the specified algorithm function
-        url = os.getenv("ALGORITHM_FUNCTION_BASE_URL") + stage["algorithmFunction"]
+        url = os.getenv(
+            "ALGORITHM_FUNCTION_BASE_URL") + stage["algorithmFunction"]
 
         # Carry out the request, handeling the appropriate errors correctly
         level = f"Grading Gateway: Algorithm Function: {stage['algorithmFunction']}"  # for errors
 
-        res = safe_get(
-            level, url, json=payload, headers={"Content-Type": "application/json"}
-        )
+        res = safe_get(level,
+                       url,
+                       json=payload,
+                       headers={"Content-Type": "application/json"})
 
         # If an error occured at a pipeline stage, abort and send it back
         if "error" in res:
@@ -147,11 +164,13 @@ def apply_algorithm_pipeline(block):
         elif "block" not in res:
             return {
                 "error": {
-                    "level": level,
-                    "description": "Algorithm function did not return block",
-                    "raw_response": res
-                    if os.getenv("ENV_MODE") == "dev"
-                    else "ENV_MODE != dev",
+                    "level":
+                    level,
+                    "description":
+                    "Algorithm function did not return block",
+                    "raw_response":
+                    res
+                    if os.getenv("ENV_MODE") == "dev" else "ENV_MODE != dev",
                 }
             }
 
@@ -187,7 +206,7 @@ def get_correct_answer(block, headers):
             }
         }
     elif len(parts) == 1:
-        raise {
+        return {
             "error": {
                 "level": level,
                 "description": "Token not found in Authorization header",
@@ -201,21 +220,35 @@ def get_correct_answer(block, headers):
             }
         }
 
-    response_id = block.get("response_id", None)
+    response_id = block.get("_id", None)
 
     if not response_id:
         return {
             "error": {
-                "level": level,
-                "description": "Block needs a `response_id` when answer isn't supplied by algorithm functions or init block",
+                "level":
+                level,
+                "description":
+                "Block needs a `_id` when answer isn't supplied by algorithm functions or init block",
+            }
+        }
+
+    set_id = block.get("set_id", None)
+
+    if not set_id:
+        return {
+            "error": {
+                "level":
+                level,
+                "description":
+                "Block needs a `set_id` when answer isn't supplied by algorithm functions or init block",
             }
         }
 
     # We can now fetch the answer from the sets DB
     answer = safe_get(
         level,
-        os.getenv("SETS_DB_API_ANSWER_ENDPOINT"),
-        json={"response_id": response_id},
+        os.getenv("SETS_DB_API_ANSWER_ENDPOINT") + f"sets/{set_id}",
+        params={"responseId": response_id},
         headers={"Authorization": auth},
     )
 
@@ -230,8 +263,10 @@ def get_grade(block):
     if not block.get("gradeFunction"):
         return {
             "error": {
-                "level": "Grading Gateway: Get Grade",
-                "description": "`gradeFunction` is a required field, it was either lost in the pipeline or never supplied",
+                "level":
+                "Grading Gateway: Get Grade",
+                "description":
+                "`gradeFunction` is a required field, it was either lost in the pipeline or never supplied",
             }
         }
 
@@ -251,7 +286,10 @@ def get_grade(block):
         level,
         url,
         json=payload,
-        headers={"Content-Type": "application/json", "command": "grade"},
+        headers={
+            "Content-Type": "application/json",
+            "command": "grade"
+        },
     )
 
     return grade
